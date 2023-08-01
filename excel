@@ -44,3 +44,55 @@ class DropdownController extends CI_Controller {
         exit;
     }
 }
+
+
+
+// application/controllers/DropdownController.php
+class DropdownController extends CI_Controller {
+    public function index() {
+        $this->load->view('dropdown_view');
+    }
+
+    public function generate_excel() {
+        // Load PhpSpreadsheet library
+        require_once APPPATH . 'libraries/vendor/autoload.php';
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Define parent and child dropdown options
+        $parentOptions = ['Option 1', 'Option 2', 'Option 3'];
+        $childOptions = [
+            'Option 1' => ['Child Option 1', 'Child Option 2', 'Child Option 3'],
+            'Option 2' => ['Child Option 4', 'Child Option 5'],
+            'Option 3' => ['Child Option 6', 'Child Option 7', 'Child Option 8'],
+        ];
+
+        // Set parent dropdown options
+        $sheet->setCellValue('A1', 'Select Parent');
+        $sheet->setCellValue('B1', implode(',', $parentOptions));
+
+        // Set data validation for parent dropdown
+        $sheet->setDataValidation('B2:B100', \PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST, ['formula1' => '=$B$1']);
+
+        // Set child dropdown options
+        foreach ($parentOptions as $index => $parentOption) {
+            $startRow = $index * 10 + 2; // Adjust the start row as per your requirements
+            $endRow = $startRow + count($childOptions[$parentOption]) - 1;
+            $options = implode(',', $childOptions[$parentOption]);
+            $sheet->setCellValue('A' . $startRow, 'Select Child');
+            $sheet->setCellValue('B' . $startRow, $options);
+            // Set data validation for child dropdown
+            $sheet->setDataValidation('B' . ($startRow + 1) . ':B' . $endRow, \PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST, ['formula1' => '=$B$' . $startRow]);
+        }
+
+        // Create a response for Excel download
+        $filename = 'dependency_dropdown_example.xlsx';
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $writer->save('php://output');
+        exit;
+    }
+}
