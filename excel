@@ -401,3 +401,107 @@ class DropdownController extends CI_Controller {
     }
 }
 
+
+
+
+// application/controllers/DropdownController.php
+require_once APPPATH . 'libraries/PHPExcel.php'; // Include the PHPExcel library
+
+class DropdownController extends CI_Controller {
+    public function index() {
+        $this->load->view('dropdown_view');
+    }
+
+    public function generate_excel() {
+        // Create a new PHPExcel object
+        $objPHPExcel = new PHPExcel();
+
+        // Set default properties
+        $objPHPExcel->getProperties()
+            ->setCreator("Your Name")
+            ->setLastModifiedBy("Your Name")
+            ->setTitle("Dependency Dropdown Example")
+            ->setSubject("Dependency Dropdown Example")
+            ->setDescription("Dependency dropdown example for country, state, and city");
+
+        // Add a new worksheet
+        $objPHPExcel->setActiveSheetIndex(0);
+        $sheet = $objPHPExcel->getActiveSheet();
+
+        // Define country, state, and city data (replace this with your data retrieval logic)
+        $countries = ['Country 1', 'Country 2', 'Country 3'];
+        $states = [
+            'Country 1' => ['State 1', 'State 2'],
+            'Country 2' => ['State 3', 'State 4'],
+            'Country 3' => ['State 5', 'State 6'],
+        ];
+        $cities = [
+            'State 1' => ['City 1', 'City 2'],
+            'State 2' => ['City 3', 'City 4'],
+            'State 3' => ['City 5', 'City 6'],
+            'State 4' => ['City 7', 'City 8'],
+            'State 5' => ['City 9', 'City 10'],
+            'State 6' => ['City 11', 'City 12'],
+        ];
+
+        // Set country dropdown options
+        $sheet->setCellValue('A1', 'Select Country');
+        $sheet->setCellValue('B1', implode(',', $countries));
+
+        // Set data validation for country dropdown
+        $objValidation = $sheet->getCell('B2')->getDataValidation();
+        $objValidation->setType(PHPExcel_Cell_DataValidation::TYPE_LIST);
+        $objValidation->setErrorStyle(PHPExcel_Cell_DataValidation::STYLE_INFORMATION);
+        $objValidation->setAllowBlank(false);
+        $objValidation->setShowDropDown(true);
+        $objValidation->setFormula1('"' . implode(',', $countries) . '"');
+
+        // Set state dropdown options based on selected country
+        foreach ($countries as $index => $country) {
+            $startRow = $index * 10 + 2; // Adjust the start row as per your requirements
+            $endRow = $startRow + count($states[$country]) - 1;
+            $options = implode(',', $states[$country]);
+            $sheet->setCellValue('A' . $startRow, 'Select State');
+            $sheet->setCellValue('B' . $startRow, $options);
+
+            // Set data validation for state dropdown
+            $objValidation = $sheet->getCell('B' . ($startRow + 1))->getDataValidation();
+            $objValidation->setType(PHPExcel_Cell_DataValidation::TYPE_LIST);
+            $objValidation->setErrorStyle(PHPExcel_Cell_DataValidation::STYLE_INFORMATION);
+            $objValidation->setAllowBlank(false);
+            $objValidation->setShowDropDown(true);
+            $objValidation->setFormula1('"' . $options . '"');
+
+            // Set city dropdown options based on selected state
+            foreach ($states[$country] as $stateIndex => $state) {
+                $cityStartRow = $startRow + $stateIndex * 10 + 2; // Adjust the start row as per your requirements
+                $cityEndRow = $cityStartRow + count($cities[$state]) - 1;
+                $cityOptions = implode(',', $cities[$state]);
+                $sheet->setCellValue('A' . $cityStartRow, 'Select City');
+                $sheet->setCellValue('B' . $cityStartRow, $cityOptions);
+
+                // Set data validation for city dropdown
+                $objValidation = $sheet->getCell('B' . ($cityStartRow + 1))->getDataValidation();
+                $objValidation->setType(PHPExcel_Cell_DataValidation::TYPE_LIST);
+                $objValidation->setErrorStyle(PHPExcel_Cell_DataValidation::STYLE_INFORMATION);
+                $objValidation->setAllowBlank(false);
+                $objValidation->setShowDropDown(true);
+                $objValidation->setFormula1('"' . $cityOptions . '"');
+            }
+        }
+
+        // Rename worksheet
+        $sheet->setTitle('Dependency Dropdowns');
+
+        // Create a response for Excel download
+        $filename = 'dependency_dropdown_example.xls';
+        header('Content-Type: application/vnd.ms-excel');
+        header('Content-Disposition: attachment;filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel5');
+        $objWriter->save('php://output');
+        exit;
+    }
+}
+
