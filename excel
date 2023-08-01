@@ -232,3 +232,42 @@ class DropdownController extends CI_Controller {
     }
 }
 
+
+// application/controllers/DropdownController.php
+class DropdownController extends CI_Controller {
+    public function generate_excel() {
+        // Load PhpSpreadsheet library
+        require_once APPPATH . 'libraries/vendor/autoload.php';
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Get the data for parent and child dropdowns (replace this with your data retrieval logic)
+        $parentOptions = ['Option 1', 'Option 2', 'Option 3'];
+        $childOptions = [
+            'Option 1' => ['Child Option 1', 'Child Option 2'],
+            'Option 2' => ['Child Option 3', 'Child Option 4'],
+            'Option 3' => ['Child Option 5', 'Child Option 6'],
+        ];
+
+        // Set parent dropdown options
+        $parentOptionsCell = 'A2';
+        $sheet->setCellValue($parentOptionsCell, implode(',', $parentOptions));
+
+        // Set child dropdown options based on parent selection
+        foreach ($parentOptions as $index => $option) {
+            $childOptionsCell = 'A' . ($index + 2);
+            $sheet->setCellValue($childOptionsCell, implode(',', $childOptions[$option]));
+        }
+
+        // Create a response for Excel download
+        $filename = 'dependency_dropdown_example.xlsx';
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $writer->save('php://output');
+        exit;
+    }
+}
+
