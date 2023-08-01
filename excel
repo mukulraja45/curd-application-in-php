@@ -1,0 +1,46 @@
+
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+// application/controllers/DropdownController.php
+class DropdownController extends CI_Controller {
+    public function generate_excel() {
+        // Load the PHPExcel library
+        $this->load->library('PHPExcel');
+
+        // Load the Excel template
+        $templateFilePath = _xls_;
+       $objPHPExcel = new PHPExcel();
+
+        //$objPHPExcel = PHPExcel_IOFactory::load($templateFilePath);
+
+        // Get the data from the database or any other data source (not shown in this example)
+        // Replace this with your own data retrieval logic for parent and child options
+        $parentOptions = ['Option 1', 'Option 2', 'Option 3'];
+        $childOptions = [
+            'Option 1' => ['Child Option 1', 'Child Option 2'],
+            'Option 2' => ['Child Option 3', 'Child Option 4'],
+            'Option 3' => ['Child Option 5', 'Child Option 6'],
+        ];
+
+        // Set the parent dropdown options in the Excel file
+        $parentSheet = $objPHPExcel->getActiveSheet();
+        $parentSheet->setCellValue('A2', implode(',', $parentOptions));
+
+        // Set the child dropdown options in the Excel file based on parent selection
+        foreach ($parentOptions as $index => $option) {
+            $childSheet = clone $parentSheet;
+            $childSheet->setCellValue('A2', implode(',', $childOptions[$option]));
+            $objPHPExcel->addSheet($childSheet, $index + 1);
+        }
+
+        // Create a response for Excel download
+        $filename = 'dependency_dropdown_example.xlsx';
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
+        $objWriter->save('php://output');
+        exit;
+    }
+}
