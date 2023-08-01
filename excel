@@ -505,3 +505,92 @@ class DropdownController extends CI_Controller {
     }
 }
 
+
+
+
+// application/controllers/DropdownController.php
+require_once APPPATH . 'PHPExcel/PHPExcel.php';
+
+class DropdownController extends CI_Controller {
+    public function index() {
+        $this->load->view('dropdown_view');
+    }
+
+    public function generate_excel() {
+        // Create a new PHPExcel object
+        $objPHPExcel = new PHPExcel();
+
+        // Set default sheet to active
+        $objPHPExcel->setActiveSheetIndex(0);
+        $sheet = $objPHPExcel->getActiveSheet();
+
+        // Define country, state, and city data (replace this with your data retrieval logic)
+        $countries = ['Country 1', 'Country 2', 'Country 3'];
+        $states = [
+            'Country 1' => ['State 1', 'State 2'],
+            'Country 2' => ['State 3', 'State 4'],
+            'Country 3' => ['State 5', 'State 6'],
+        ];
+        $cities = [
+            'State 1' => ['City 1', 'City 2'],
+            'State 2' => ['City 3', 'City 4'],
+            'State 3' => ['City 5', 'City 6'],
+            'State 4' => ['City 7', 'City 8'],
+            'State 5' => ['City 9', 'City 10'],
+            'State 6' => ['City 11', 'City 12'],
+        ];
+
+        // Set country dropdown options
+        $sheet->setCellValue('A1', 'Select Country');
+        $sheet->setCellValue('B1', implode(',', $countries));
+
+        // Set data validation for country dropdown
+        $objValidation = $sheet->getCell('B2')->getDataValidation();
+        $objValidation->setType(PHPExcel_Cell_DataValidation::TYPE_LIST);
+        $objValidation->setErrorStyle(PHPExcel_Cell_DataValidation::STYLE_INFORMATION);
+        $objValidation->setAllowBlank(false);
+        $objValidation->setShowInputMessage(true);
+        $objValidation->setShowErrorMessage(true);
+        $objValidation->setShowDropDown(true);
+        $objValidation->setErrorTitle('Input error');
+        $objValidation->setError('Value is not in list.');
+        $objValidation->setPromptTitle('Pick from list');
+        $objValidation->setPrompt('Please pick a value from the drop-down list.');
+        $objValidation->setFormula1('"' . implode(',', $countries) . '"');
+
+        // Set state dropdown options
+        $currentRow = 2;
+        foreach ($countries as $country) {
+            $sheet->setCellValue('A' . $currentRow, 'Select State');
+            $sheet->setCellValue('B' . $currentRow, implode(',', $states[$country]));
+
+            // Set data validation for state dropdown
+            $objValidation = $sheet->getCell('B' . ($currentRow + 1))->getDataValidation();
+            $objValidation->setType(PHPExcel_Cell_DataValidation::TYPE_LIST);
+            $objValidation->setErrorStyle(PHPExcel_Cell_DataValidation::STYLE_INFORMATION);
+            $objValidation->setAllowBlank(false);
+            $objValidation->setShowInputMessage(true);
+            $objValidation->setShowErrorMessage(true);
+            $objValidation->setShowDropDown(true);
+            $objValidation->setErrorTitle('Input error');
+            $objValidation->setError('Value is not in list.');
+            $objValidation->setPromptTitle('Pick from list');
+            $objValidation->setPrompt('Please pick a value from the drop-down list.');
+            $objValidation->setFormula1('"' . implode(',', $states[$country]) . '"');
+
+            $currentRow += 2;
+        }
+
+        // Create a response for Excel download
+        $filename = 'dependency_dropdown_example.xls';
+        header('Content-Type: application/vnd.ms-excel');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel5');
+        $objWriter->save('php://output');
+        exit;
+    }
+}
+
+
