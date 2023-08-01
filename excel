@@ -594,3 +594,93 @@ class DropdownController extends CI_Controller {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+// application/controllers/ExcelController.php
+require_once APPPATH . 'libraries/PHPExcel/PHPExcel.php';
+
+class ExcelController extends CI_Controller {
+    public function index() {
+        $this->load->view('excel_view');
+    }
+
+    public function generate_excel() {
+        // Create a new Excel workbook
+        $objPHPExcel = new PHPExcel();
+
+        // Define parent and child dropdown options
+        $parentOptions = ['Country', 'State', 'City'];
+        $childOptions = [
+            'Country' => ['Option 1', 'Option 2', 'Option 3'],
+            'State' => ['State 1', 'State 2', 'State 3'],
+            'City' => ['City 1', 'City 2', 'City 3'],
+        ];
+
+        // Set parent dropdown options
+        $objPHPExcel->getActiveSheet()->setCellValue('A1', 'Select Parent');
+        $objPHPExcel->getActiveSheet()->setCellValue('B1', implode(',', $parentOptions));
+
+        // Set data validation for parent dropdown
+        $objValidation = $objPHPExcel->getActiveSheet()->getCell('B2')->getDataValidation();
+        $objValidation->setType(PHPExcel_Cell_DataValidation::TYPE_LIST);
+        $objValidation->setErrorStyle(PHPExcel_Cell_DataValidation::STYLE_INFORMATION);
+        $objValidation->setAllowBlank(false);
+        $objValidation->setShowInputMessage(true);
+        $objValidation->setShowErrorMessage(true);
+        $objValidation->setShowDropDown(true);
+        $objValidation->setErrorTitle('Input error');
+        $objValidation->setError('Value is not in list.');
+        $objValidation->setPromptTitle('Pick from list');
+        $objValidation->setPrompt('Please pick a value from the drop-down list.');
+        $objValidation->setFormula1('"' . implode(',', $parentOptions) . '"');
+
+        // Set child dropdown options based on selected parent
+        foreach ($parentOptions as $index => $parentOption) {
+            $startRow = $index * 10 + 2; // Adjust the start row as per your requirements
+            $endRow = $startRow + count($childOptions[$parentOption]) - 1;
+            $options = implode(',', $childOptions[$parentOption]);
+            $objPHPExcel->getActiveSheet()->setCellValue('A' . $startRow, 'Select ' . $parentOption);
+            $objPHPExcel->getActiveSheet()->setCellValue('B' . $startRow, $options);
+
+            // Set data validation for child dropdown
+            $objValidation = $objPHPExcel->getActiveSheet()->getCell('B' . ($startRow + 1))->getDataValidation();
+            $objValidation->setType(PHPExcel_Cell_DataValidation::TYPE_LIST);
+            $objValidation->setErrorStyle(PHPExcel_Cell_DataValidation::STYLE_INFORMATION);
+            $objValidation->setAllowBlank(false);
+            $objValidation->setShowInputMessage(true);
+            $objValidation->setShowErrorMessage(true);
+            $objValidation->setShowDropDown(true);
+            $objValidation->setErrorTitle('Input error');
+            $objValidation->setError('Value is not in list.');
+            $objValidation->setPromptTitle('Pick from list');
+            $objValidation->setPrompt('Please pick a value from the drop-down list.');
+            $objValidation->setFormula1('"' . $options . '"');
+        }
+
+        // Create a writer for Excel
+        $objPHPExcelWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
+
+        // Create a response for Excel download
+        $filename = 'dependency_dropdown_example.xlsx';
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $objPHPExcelWriter->save('php://output');
+        exit;
+    }
+}
+
+
+
