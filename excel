@@ -271,3 +271,57 @@ class DropdownController extends CI_Controller {
     }
 }
 
+
+// application/controllers/DropdownController.php
+class DropdownController extends CI_Controller {
+    public function index() {
+        $this->load->view('dropdown_view');
+    }
+
+    public function generate_excel() {
+        $filename = 'dependency_dropdown_example.xlsx';
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $excelData = $this->generateExcelData();
+        echo $excelData;
+        exit;
+    }
+
+    private function generateExcelData() {
+        // Define parent and child dropdown options
+        $parentOptions = ['Option 1', 'Option 2', 'Option 3'];
+        $childOptions = [
+            'Option 1' => ['Child Option 1', 'Child Option 2'],
+            'Option 2' => ['Child Option 3', 'Child Option 4'],
+            'Option 3' => ['Child Option 5', 'Child Option 6'],
+        ];
+
+        $xml = '<?xml version="1.0"?>
+            <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+                      xmlns:x="urn:schemas-microsoft-com:office:excel"
+                      xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+                      xmlns:html="http://www.w3.org/TR/REC-html40">
+                <Worksheet ss:Name="Sheet1">
+                    <Table>
+                        <Row>
+                            <Cell><Data ss:Type="String">Select Parent</Data></Cell>
+                            <Cell><Data ss:Type="String">' . implode(',', $parentOptions) . '</Data></Cell>
+                        </Row>';
+
+        foreach ($parentOptions as $index => $parentOption) {
+            $xml .= '<Row>
+                        <Cell><Data ss:Type="String">Select Child</Data></Cell>
+                        <Cell><Data ss:Type="String">' . implode(',', $childOptions[$parentOption]) . '</Data></Cell>
+                    </Row>';
+        }
+
+        $xml .= '</Table>
+                </Worksheet>
+            </Workbook>';
+
+        return $xml;
+    }
+}
+
